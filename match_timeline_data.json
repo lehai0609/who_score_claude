@@ -1,0 +1,389 @@
+{
+  "match_info": {},
+  "timeline_data": [
+    {
+      "match_info": {
+        "home_team": "Nottingham Forest",
+        "away_team": "Brentford",
+        "score": "0:2",
+        "date": "2025-05-01",
+        "competition": "Premier League"
+      },
+      "player_ratings": [
+        {
+          "player_name": "Mark Flekken",
+          "team": "Brentford",
+          "position": "GK",
+          "final_rating": 8.3,
+          "rating_timeline": [
+            {
+              "minute": 45,
+              "rating": 7.5
+            },
+            {
+              "minute": 70,
+              "rating": 8.0
+            },
+            {
+              "minute": 90,
+              "rating": 8.3
+            }
+          ],
+          "statistics": {
+            "passes": 25,
+            "pass_accuracy": 68,
+            "shots": 0,
+            "tackles": 0
+          }
+        },
+        {
+          "player_name": "Kevin Schade",
+          "team": "Brentford",
+          "position": "Forward",
+          "final_rating": 7.6,
+          "rating_timeline": [
+            {
+              "minute": 44,
+              "rating": 7.6
+            }
+          ],
+          "statistics": {
+            "passes": 20,
+            "pass_accuracy": 80,
+            "shots": 1,
+            "tackles": 1
+          }
+        },
+        {
+          "player_name": "Yoane Wissa",
+          "team": "Brentford",
+          "position": "Forward",
+          "final_rating": 7.8,
+          "rating_timeline": [
+            {
+              "minute": 70,
+              "rating": 7.8
+            }
+          ],
+          "statistics": {
+            "passes": 15,
+            "pass_accuracy": 75,
+            "shots": 2,
+            "tackles": 0
+          }
+        }
+      ],
+      "timeline_data": [
+        {
+          "minute": 44,
+          "period": "first_half",
+          "team_ratings": {
+            "home_avg": 6.29,
+            "away_avg": 7.06
+          },
+          "key_events": [
+            "Goal by Kevin Schade"
+          ],
+          "statistics": {
+            "possession": {
+              "home": 54.6,
+              "away": 45.4
+            },
+            "shots": {
+              "home": 14,
+              "away": 11
+            }
+          }
+        },
+        {
+          "minute": 70,
+          "period": "second_half",
+          "team_ratings": {
+            "home_avg": 6.29,
+            "away_avg": 7.06
+          },
+          "key_events": [
+            "Goal by Yoane Wissa"
+          ],
+          "statistics": {
+            "possession": {
+              "home": 54.6,
+              "away": 45.4
+            },
+            "shots": {
+              "home": 14,
+              "away": 11
+            }
+          }
+        }
+      ],
+      "performance_metrics": {
+        "team_stats": {
+          "possession": {
+            "home": 54.6,
+            "away": 45.4
+          },
+          "pass_accuracy": {
+            "home": 80,
+            "away": 76
+          },
+          "shots_on_target": {
+            "home": 5,
+            "away": 3
+          }
+        },
+        "individual_stats": [
+          {
+            "player_name": "Morgan Gibbs-White",
+            "team": "Nottingham Forest",
+            "passes": 30,
+            "pass_accuracy": 85,
+            "shots": 1,
+            "tackles": 2
+          }
+        ],
+        "key_performances": [
+          {
+            "player_name": "Mark Flekken",
+            "team": "Brentford",
+            "performance": "Made crucial saves and maintained a clean sheet"
+          }
+        ]
+      },
+      "error": false
+    }
+  ],
+  "summary_stats": {},
+  "raw_extracted_data": {
+    "extracted_items": [
+      {
+        "match_info": {
+          "home_team": "Nottingham Forest",
+          "away_team": "Brentford",
+          "score": "0:2",
+          "date": "2025-05-01",
+          "competition": "Premier League"
+        },
+        "player_ratings": [
+          {
+            "player_name": "Mark Flekken",
+            "team": "Brentford",
+            "position": "GK",
+            "final_rating": 8.3,
+            "rating_timeline": [
+              {
+                "minute": 45,
+                "rating": 7.5
+              },
+              {
+                "minute": 70,
+                "rating": 8.0
+              },
+              {
+                "minute": 90,
+                "rating": 8.3
+              }
+            ],
+            "statistics": {
+              "passes": 25,
+              "pass_accuracy": 68,
+              "shots": 0,
+              "tackles": 0
+            }
+          },
+          {
+            "player_name": "Kevin Schade",
+            "team": "Brentford",
+            "position": "Forward",
+            "final_rating": 7.6,
+            "rating_timeline": [
+              {
+                "minute": 44,
+                "rating": 7.6
+              }
+            ],
+            "statistics": {
+              "passes": 20,
+              "pass_accuracy": 80,
+              "shots": 1,
+              "tackles": 1
+            }
+          },
+          {
+            "player_name": "Yoane Wissa",
+            "team": "Brentford",
+            "position": "Forward",
+            "final_rating": 7.8,
+            "rating_timeline": [
+              {
+                "minute": 70,
+                "rating": 7.8
+              }
+            ],
+            "statistics": {
+              "passes": 15,
+              "pass_accuracy": 75,
+              "shots": 2,
+              "tackles": 0
+            }
+          }
+        ],
+        "timeline_data": [
+          {
+            "minute": 44,
+            "period": "first_half",
+            "team_ratings": {
+              "home_avg": 6.29,
+              "away_avg": 7.06
+            },
+            "key_events": [
+              "Goal by Kevin Schade"
+            ],
+            "statistics": {
+              "possession": {
+                "home": 54.6,
+                "away": 45.4
+              },
+              "shots": {
+                "home": 14,
+                "away": 11
+              }
+            }
+          },
+          {
+            "minute": 70,
+            "period": "second_half",
+            "team_ratings": {
+              "home_avg": 6.29,
+              "away_avg": 7.06
+            },
+            "key_events": [
+              "Goal by Yoane Wissa"
+            ],
+            "statistics": {
+              "possession": {
+                "home": 54.6,
+                "away": 45.4
+              },
+              "shots": {
+                "home": 14,
+                "away": 11
+              }
+            }
+          }
+        ],
+        "performance_metrics": {
+          "team_stats": {
+            "possession": {
+              "home": 54.6,
+              "away": 45.4
+            },
+            "pass_accuracy": {
+              "home": 80,
+              "away": 76
+            },
+            "shots_on_target": {
+              "home": 5,
+              "away": 3
+            }
+          },
+          "individual_stats": [
+            {
+              "player_name": "Morgan Gibbs-White",
+              "team": "Nottingham Forest",
+              "passes": 30,
+              "pass_accuracy": 85,
+              "shots": 1,
+              "tackles": 2
+            }
+          ],
+          "key_performances": [
+            {
+              "player_name": "Mark Flekken",
+              "team": "Brentford",
+              "performance": "Made crucial saves and maintained a clean sheet"
+            }
+          ]
+        },
+        "error": false
+      }
+    ],
+    "match_data": {
+      "match_info": {
+        "home_team": "Nottingham Forest",
+        "away_team": "Brentford",
+        "score": "0:2",
+        "date": "2025-05-01",
+        "competition": "Premier League"
+      }
+    },
+    "timeline_events": [
+      {
+        "timeline_data": [
+          {
+            "minute": 44,
+            "period": "first_half",
+            "team_ratings": {
+              "home_avg": 6.29,
+              "away_avg": 7.06
+            },
+            "key_events": [
+              "Goal by Kevin Schade"
+            ],
+            "statistics": {
+              "possession": {
+                "home": 54.6,
+                "away": 45.4
+              },
+              "shots": {
+                "home": 14,
+                "away": 11
+              }
+            }
+          },
+          {
+            "minute": 70,
+            "period": "second_half",
+            "team_ratings": {
+              "home_avg": 6.29,
+              "away_avg": 7.06
+            },
+            "key_events": [
+              "Goal by Yoane Wissa"
+            ],
+            "statistics": {
+              "possession": {
+                "home": 54.6,
+                "away": 45.4
+              },
+              "shots": {
+                "home": 14,
+                "away": 11
+              }
+            }
+          }
+        ]
+      }
+    ],
+    "page_analysis": {
+      "page_loaded": true,
+      "has_basic_content": true,
+      "has_timeline_indicators": true,
+      "has_rating_data": true,
+      "content_size": 40508,
+      "found_selectors": [
+        "div#timeline",
+        "div#match-centre"
+      ]
+    }
+  },
+  "extraction_metadata": {
+    "timestamp": "2025-06-11T18:28:02.600449",
+    "scraper_version": "1.0.1",
+    "source": "WhoScored.com",
+    "crawl4ai_version": "0.6.3",
+    "extraction_success": true,
+    "original_data_type": "<class 'dict'>",
+    "data_structure": "dict"
+  }
+}

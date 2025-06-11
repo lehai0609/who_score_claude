@@ -1,0 +1,28 @@
+============================================================
+WHOSCORED MATCH CENTRE DATA EXTRACTION REPORT
+============================================================
+Generated: 2025-06-11 18:28:02
+
+EXTRACTION INFO:
+- Timestamp: 2025-06-11T18:28:02.600449
+- Source: WhoScored.com
+- Scraper Version: 1.0.1
+- Crawl4AI Version: 0.6.3
+- Success: True
+- Data Fields Found: ...
+
+TIMELINE DATA:
+- Timeline entries: 1
+- First entry: {'match_info': {'home_team': 'Nottingham Forest', 'away_team': 'Brentford', 'score': '0:2', 'date': ...
+
+RAW EXTRACTED DATA SUMMARY:
+- Total fields: 4
+- Field names: extracted_items, match_data, timeline_events, page_analysis
+- Data size: ~2,752 characters
+
+SUMMARY:
+- Extraction completed: ✅
+- Data structure keys: ['match_info', 'timeline_data', 'summary_stats', 'raw_extracted_data', 'extraction_metadata']
+- Total data size: ~4,943 characters
+
+============================================================
