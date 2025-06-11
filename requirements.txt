@@ -1,0 +1,20 @@
+# Core scraping dependencies
+Crawl4AI==0.6.3
+python-dotenv==1.1.0
+pydantic==2.11.1
+
+# Additional utilities
+requests==2.32.4
+beautifulsoup4==4.13.4
+lxml==5.4.0
+
+# For data processing
+pandas==2.3.0
+numpy==2.3.0
+
+# Async support
+aiohttp==3.12.12
+asyncio-throttle==1.0.2
+
+# Logging and monitoring
+rich==14.0.0

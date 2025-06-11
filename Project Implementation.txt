@@ -1,0 +1,1016 @@
+#!/usr/bin/env python3
+"""
+WhoScored Match Centre Timeline Scraper
+======================================
+
+A comprehensive web scraper for extracting match centre rating data 
+from WhoScored.com using Crawl4AI and GPT-4o.
+
+Project Structure:
+├── README.md
+├── config.py
+├── main.py
+├── requirements.txt
+├── .env.example
+├── models/
+│   ├── __init__.py
+│   └── match_data.py
+└── src/
+    ├── __init__.py
+    ├── scraper.py
+    └── utils.py
+"""
+
+# ============================================================================
+# FILE: README.md
+# ============================================================================
+
+README_CONTENT = """
+# WhoScored Match Centre Timeline Scraper
+
+### 🏆 **AI-Powered Football Match Data Extraction**
+
+This project is an AI-powered web scraper built with [**Crawl4AI**](https://docs.crawl4ai.com/) to extract **match centre rating data** and **timeline information** from [**WhoScored.com**](https://www.whoscored.com/). Using **GPT-4o**, it intelligently processes live match data, filters out advertisements, and outputs clean **JSON** data for analysis.
+
+## Features
+
+- **Real-time Match Data** – Extract player ratings, timeline events, and match statistics
+- **AI-Powered Filtering** – Use GPT-4o to identify relevant data and ignore ads/promotional content  
+- **Timeline Analysis** – Capture rating changes throughout match periods
+- **JSON Output** – Clean, structured data ready for analysis or integration
+- **No Authentication Required** – Access publicly available match data
+
+## Target Data
+
+The scraper extracts the following information from WhoScored match pages:
+- **Timeline Ratings** – Player and team ratings by minute/period
+- **Match Events** – Goals, cards, substitutions with timestamps
+- **Performance Metrics** – Live statistics during match progression
+- **Team Data** – Formation, lineup, and tactical information
+
+## Adaptability
+
+This scraper targets **WhoScored.com** match centre pages but can be adapted for:
+- Different match URLs and leagues
+- Historical match data extraction
+- Live match monitoring
+- Custom data fields and filtering
+
+## Use Cases
+
+- **Match Analysis** – Track performance changes throughout matches
+- **Data Analytics** – Build datasets for football research
+- **Live Monitoring** – Extract real-time match statistics
+- **Historical Research** – Collect data from completed matches
+- **Performance Tracking** – Monitor player/team rating trends
+
+## Project Structure
+
+```
+.
+├── main.py              # Main entry point for the scraper
+├── config.py            # Configuration (LLM models, URLs, selectors)
+├── models/
+│   └── match_data.py    # Pydantic models for match data structures
+├── src/
+│   ├── scraper.py       # Core scraping functionality
+│   └── utils.py         # Data processing and export utilities
+└── requirements.txt     # Python dependencies
+```
+
+## How to Run
+
+### Prerequisites
+- Python 3.11+
+- OpenAI API key (for GPT-4o)
+- Required Python libraries
+
+### Setup
+
+#### 1. Clone and Setup Environment
+```bash
+git clone <repository-url>
+cd whoscored-scraper
+python -m venv venv
+source venv/bin/activate  # Windows: venv\\Scripts\\activate
+```
+
+#### 2. Install Dependencies
+```bash
+pip install -r requirements.txt
+playwright install
+```
+
+#### 3. Configure Environment
+Create `.env` file:
+```ini
+OPENAI_API_KEY="your-openai-api-key-here"
+```
+
+#### 4. Run the Scraper
+```bash
+python main.py
+```
+
+The scraper will:
+1. Extract data from the configured WhoScored match URL
+2. Process timeline and rating information using GPT-4o
+3. Filter out advertisements and irrelevant content
+4. Save results to `match_timeline_data.json`
+
+## Configuration
+
+Modify `config.py` to customize:
+
+- **MATCH_URL**: Target WhoScored match page
+- **LLM_MODEL**: AI model for data processing (`gpt-4o`)
+- **CSS_SELECTORS**: HTML elements to target
+- **OUTPUT_FORMAT**: JSON structure and fields
+- **SCRAPER_INSTRUCTIONS**: AI prompts for data extraction
+
+## Sample Output
+
+```json
+{
+  "match_info": {
+    "home_team": "Nottingham Forest",
+    "away_team": "Brentford", 
+    "score": "0-2",
+    "date": "2024-12-XX"
+  },
+  "timeline_data": [
+    {
+      "minute": 15,
+      "period": "first_half",
+      "ratings": {
+        "home_team_avg": 6.2,
+        "away_team_avg": 6.8
+      },
+      "events": [...]
+    }
+  ]
+}
+```
+
+## Important Notes
+
+- **Respect Rate Limits**: Include delays between requests
+- **Terms of Service**: Follow WhoScored.com's usage policies  
+- **Dynamic Content**: The scraper handles JavaScript-rendered content
+- **Error Handling**: Robust error handling for network issues
+
+## Contributing
+
+Contributions welcome! Please submit issues or pull requests.
+
+## Contact
+
+For questions or support: [your-email@example.com]
+"""
+
+# ============================================================================
+# FILE: config.py
+# ============================================================================
+
+CONFIG_CONTENT = '''import os
+
+# LLM Configuration
+# Using GPT-4o for intelligent data extraction and ad filtering
+LLM_MODEL = "gpt-4o"
+API_TOKEN = os.getenv("OPENAI_API_KEY")
+
+# Target WhoScored Match URL
+# Example: Nottingham Forest vs Brentford match
+# Format: https://www.whoscored.com/matches/{match_id}/live/{match_slug}
+MATCH_URL = "https://www.whoscored.com/matches/1821372/live/england-premier-league-2024-2025-nottingham-forest-brentford"
+
+# CSS Selectors for WhoScored Match Centre
+# Primary target: Timeline minute data container
+PRIMARY_SELECTOR = "div#matchcentre-timeline-minutes"
+
+# Alternative selectors for comprehensive data extraction
+ALTERNATIVE_SELECTORS = [
+    "div.match-centre-container",
+    "div.timeline-container", 
+    "div.match-timeline",
+    "[class*='timeline']",
+    "[class*='matchcentre']"
+]
+
+# Additional content selectors for context
+CONTEXT_SELECTORS = [
+    "div.match-header",
+    "div.team-names", 
+    "div.score",
+    "div.match-info"
+]
+
+# Browser configuration for JavaScript-heavy site
+BROWSER_CONFIG = {
+    "wait_for_selector": PRIMARY_SELECTOR,
+    "wait_timeout": 30000,  # 30 seconds
+    "javascript_enabled": True,
+    "load_images": False,  # Optimize loading speed
+}
+
+# Scraper Instructions for GPT-4o
+# Detailed prompt for intelligent data extraction
+SCRAPER_INSTRUCTIONS = """
+You are analyzing a WhoScored.com match centre page to extract timeline rating data.
+
+EXTRACT the following information:
+1. **Match Information**: Team names, score, date, competition
+2. **Timeline Data**: Player/team ratings by minute/period
+3. **Match Events**: Goals, cards, substitutions with exact timestamps
+4. **Rating Changes**: How ratings evolve throughout the match
+5. **Performance Metrics**: Key statistics by time period
+
+IGNORE completely:
+- Advertisement content
+- Promotional banners
+- Social media widgets
+- Navigation menus
+- Cookie notices
+- Pop-up overlays
+
+FOCUS on:
+- Data from the match centre timeline container
+- Numerical ratings and statistics
+- Timestamped events and changes
+- Performance data tables
+
+Return clean, structured JSON with timeline progression and rating data.
+"""
+
+# Data Processing Configuration
+MAX_RETRIES = 3
+REQUEST_DELAY = 2  # seconds between requests
+TIMEOUT_DURATION = 60  # seconds
+
+# Output Configuration  
+OUTPUT_FILE = "match_timeline_data.json"
+SAVE_RAW_HTML = False  # For debugging purposes
+RAW_HTML_FILE = "raw_match_data.html"
+
+# Logging Configuration
+LOG_LEVEL = "INFO"
+LOG_FILE = "scraper.log"
+'''
+
+# ============================================================================
+# FILE: models/match_data.py  
+# ============================================================================
+
+MODELS_CONTENT = '''from pydantic import BaseModel, Field
+from typing import List, Optional, Dict, Any
+from datetime import datetime
+
+class MatchInfo(BaseModel):
+    """Basic match information"""
+    home_team: str = Field(..., description="Home team name")
+    away_team: str = Field(..., description="Away team name") 
+    score: str = Field(..., description="Final or current score (e.g., '2-1')")
+    date: str = Field(..., description="Match date")
+    competition: str = Field(..., description="Competition/league name")
+    venue: Optional[str] = Field(None, description="Stadium/venue name")
+    referee: Optional[str] = Field(None, description="Match referee")
+
+class MatchEvent(BaseModel):
+    """Individual match event with timestamp"""
+    minute: int = Field(..., description="Minute when event occurred")
+    period: str = Field(..., description="Match period (first_half, second_half, etc.)")
+    event_type: str = Field(..., description="Type of event (goal, card, substitution, etc.)")
+    player: Optional[str] = Field(None, description="Player involved in event")
+    team: str = Field(..., description="Team associated with the event")
+    description: str = Field(..., description="Event description")
+    rating_impact: Optional[float] = Field(None, description="Impact on player rating")
+
+class TimelineRating(BaseModel):
+    """Rating data for a specific time period"""
+    minute: int = Field(..., description="Minute of the rating snapshot")
+    period: str = Field(..., description="Match period") 
+    home_team_avg_rating: float = Field(..., description="Home team average rating")
+    away_team_avg_rating: float = Field(..., description="Away team average rating")
+    top_performer: Optional[str] = Field(None, description="Highest rated player at this time")
+    top_performer_rating: Optional[float] = Field(None, description="Rating of top performer")
+    events_in_period: List[MatchEvent] = Field(default_factory=list, description="Events occurring in this time period")
+
+class PlayerRating(BaseModel):
+    """Individual player rating data"""
+    player_name: str = Field(..., description="Player full name")
+    team: str = Field(..., description="Player's team")
+    position: str = Field(..., description="Player position")
+    current_rating: float = Field(..., description="Current match rating")
+    minutes_played: int = Field(..., description="Minutes played in match")
+    rating_history: List[Dict[str, Any]] = Field(default_factory=list, description="Rating changes throughout match")
+
+class TeamStats(BaseModel):
+    """Team performance statistics"""
+    team_name: str = Field(..., description="Team name")
+    possession: Optional[float] = Field(None, description="Possession percentage")
+    shots: Optional[int] = Field(None, description="Total shots")
+    shots_on_target: Optional[int] = Field(None, description="Shots on target")
+    passes: Optional[int] = Field(None, description="Total passes")
+    pass_accuracy: Optional[float] = Field(None, description="Pass accuracy percentage")
+    average_rating: float = Field(..., description="Team average rating")
+
+class MatchData(BaseModel):
+    """Complete match data structure"""
+    match_info: MatchInfo = Field(..., description="Basic match information")
+    timeline_ratings: List[TimelineRating] = Field(..., description="Rating progression throughout match")
+    player_ratings: List[PlayerRating] = Field(default_factory=list, description="Individual player ratings")
+    team_stats: List[TeamStats] = Field(default_factory=list, description="Team statistics")
+    match_events: List[MatchEvent] = Field(default_factory=list, description="All match events")
+    scrape_timestamp: str = Field(default_factory=lambda: datetime.now().isoformat(), description="When data was scraped")
+    data_source: str = Field(default="WhoScored.com", description="Source of the data")
+'''
+
+# ============================================================================
+# FILE: src/scraper.py
+# ============================================================================
+
+SCRAPER_CONTENT = '''import json
+import asyncio
+from typing import Dict, Any, Optional, List
+from crawl4ai import (
+    AsyncWebCrawler,
+    BrowserConfig, 
+    CacheMode,
+    CrawlerRunConfig,
+    LLMExtractionStrategy,
+)
+from src.utils import clean_extracted_data, handle_extraction_error
+from config import (
+    LLM_MODEL, 
+    API_TOKEN, 
+    PRIMARY_SELECTOR,
+    ALTERNATIVE_SELECTORS,
+    CONTEXT_SELECTORS,
+    BROWSER_CONFIG,
+    SCRAPER_INSTRUCTIONS,
+    MAX_RETRIES,
+    REQUEST_DELAY
+)
+
+def get_browser_config() -> BrowserConfig:
+    """
+    Configure browser for WhoScored.com scraping.
+    
+    WhoScored uses heavy JavaScript, so we need:
+    - JavaScript execution enabled
+    - Longer wait times for dynamic content
+    - Proper user agent to avoid blocks
+    """
+    return BrowserConfig(
+        browser_type="chromium",
+        headless=True,
+        verbose=True
+    )
+
+def get_llm_strategy(output_format) -> LLMExtractionStrategy:
+    """
+    Configure GPT-4o extraction strategy for match timeline data.
+    """
+    return LLMExtractionStrategy(
+        provider=LLM_MODEL,
+        api_token=API_TOKEN,
+        schema=output_format.model_json_schema(),
+        extraction_type="schema",
+        instruction=SCRAPER_INSTRUCTIONS,
+        input_format="html",  # Process raw HTML for better context
+        verbose=True,
+        extra_args={
+            "temperature": 0.1,  # Low temperature for consistent extraction
+            "max_tokens": 4000   # Sufficient for comprehensive data
+        }
+    )
+
+async def check_page_loaded(crawler: AsyncWebCrawler, url: str, session_id: str) -> bool:
+    """
+    Verify that the WhoScored page has loaded properly.
+    
+    Returns True if essential elements are present, False otherwise.
+    """
+    try:
+        result = await crawler.arun(
+            url=url,
+            config=CrawlerRunConfig(
+                cache_mode=CacheMode.BYPASS,
+                session_id=session_id,
+                js_code=f"""
+                const element = document.querySelector('{PRIMARY_SELECTOR}');
+                if (!element) {{
+                    throw new Error('Timeline element not found');
+                }}
+                """,
+                wait_for=f"() => document.querySelector('{PRIMARY_SELECTOR}') !== null",
+                delay_before_return_html=3.0
+            )
+        )
+        
+        if result.success:
+            # Check for key indicators that page loaded correctly
+            content = result.cleaned_html.lower()
+            indicators = ["match", "timeline", "rating", "vs", "score"]
+            
+            found_indicators = sum(1 for indicator in indicators if indicator in content)
+            return found_indicators >= 3  # At least 3 indicators should be present
+            
+        return False
+        
+    except Exception as e:
+        print(f"Error checking page load: {e}")
+        return False
+
+async def extract_with_fallback_selectors(
+    crawler: AsyncWebCrawler,
+    url: str, 
+    llm_strategy: LLMExtractionStrategy,
+    session_id: str
+) -> Optional[Dict[str, Any]]:
+    """
+    Attempt data extraction with multiple CSS selectors as fallback.
+    
+    WhoScored may change their HTML structure, so we try multiple approaches.
+    """
+    selectors_to_try = [PRIMARY_SELECTOR] + ALTERNATIVE_SELECTORS
+    
+    for i, selector in enumerate(selectors_to_try):
+        try:
+            print(f"Attempting extraction with selector {i+1}/{len(selectors_to_try)}: {selector}")
+            
+            # Build extraction config
+            config = CrawlerRunConfig(
+                cache_mode=CacheMode.BYPASS,
+                extraction_strategy=llm_strategy,
+                css_selector=selector,
+                session_id=session_id,
+                wait_for=f"() => document.querySelector('{selector}') !== null" if i == 0 else None,
+                delay_before_return_html=3.0 if i == 0 else 1.0
+            )
+            
+            result = await crawler.arun(url=url, config=config)
+            
+            if result.success and result.extracted_content:
+                try:
+                    extracted_data = json.loads(result.extracted_content)
+                    if extracted_data and validate_extracted_data(extracted_data):
+                        print(f"✅ Successfully extracted data with selector: {selector}")
+                        return extracted_data
+                except json.JSONDecodeError:
+                    print(f"❌ Invalid JSON from selector: {selector}")
+                    continue
+            else:
+                print(f"❌ No data extracted with selector: {selector}")
+                if result.error_message:
+                    print(f"Error: {result.error_message}")
+                    
+        except Exception as e:
+            print(f"❌ Exception with selector {selector}: {e}")
+            continue
+            
+        # Brief delay between attempts
+        await asyncio.sleep(1)
+    
+    print("⚠️ All selectors failed - attempting context-based extraction")
+    return await extract_with_context_selectors(crawler, url, llm_strategy, session_id)
+
+async def extract_with_context_selectors(
+    crawler: AsyncWebCrawler,
+    url: str,
+    llm_strategy: LLMExtractionStrategy, 
+    session_id: str
+) -> Optional[Dict[str, Any]]:
+    """
+    Extract data using broader context selectors when specific selectors fail.
+    """
+    try:
+        # Try extracting from broader page context
+        combined_selectors = ", ".join(CONTEXT_SELECTORS + ALTERNATIVE_SELECTORS)
+        
+        config = CrawlerRunConfig(
+            cache_mode=CacheMode.BYPASS,
+            extraction_strategy=llm_strategy,
+            css_selector=combined_selectors,
+            session_id=session_id
+        )
+        
+        result = await crawler.arun(url=url, config=config)
+        
+        if result.success and result.extracted_content:
+            try:
+                extracted_data = json.loads(result.extracted_content)
+                if extracted_data:
+                    print("✅ Extracted data using context selectors")
+                    return extracted_data
+            except json.JSONDecodeError:
+                pass
+                
+    except Exception as e:
+        print(f"Context extraction failed: {e}")
+    
+    return None
+
+def validate_extracted_data(data: Dict[str, Any]) -> bool:
+    """
+    Validate that extracted data contains essential match information.
+    """
+    if not isinstance(data, dict):
+        return False
+        
+    # Check for required fields
+    required_indicators = [
+        lambda d: any(key in str(d).lower() for key in ["match", "team", "score", "rating"]),
+        lambda d: len(str(d)) > 100,  # Substantial content
+        lambda d: not all(v is None for v in d.values() if v is not None)  # Not all empty
+    ]
+    
+    return all(check(data) for check in required_indicators)
+
+async def scrape_whoscored_match(match_url: str, output_format) -> Optional[Dict[str, Any]]:
+    """
+    Main function to scrape WhoScored match centre data.
+    
+    Args:
+        match_url: URL of the WhoScored match page
+        output_format: Pydantic model class for data structure
+        
+    Returns:
+        Extracted match data or None if extraction fails
+    """
+    browser_config = get_browser_config()
+    llm_strategy = get_llm_strategy(output_format)
+    session_id = "whoscored_match_session"
+    
+    print(f"🏆 Starting WhoScored match scraping: {match_url}")
+    
+    async with AsyncWebCrawler(config=browser_config) as crawler:
+        # First, verify the page loads correctly
+        print("🔄 Checking page load status...")
+        page_loaded = await check_page_loaded(crawler, match_url, session_id)
+        
+        if not page_loaded:
+            print("⚠️ Page may not have loaded completely, proceeding anyway...")
+        
+        # Attempt extraction with retry logic
+        for attempt in range(MAX_RETRIES):
+            try:
+                print(f"🎯 Extraction attempt {attempt + 1}/{MAX_RETRIES}")
+                
+                extracted_data = await extract_with_fallback_selectors(
+                    crawler, match_url, llm_strategy, session_id
+                )
+                
+                if extracted_data:
+                    # Clean and validate the data
+                    cleaned_data = clean_extracted_data(extracted_data)
+                    print("✅ Match data extracted successfully!")
+                    return cleaned_data
+                else:
+                    print(f"❌ Extraction attempt {attempt + 1} failed")
+                    
+            except Exception as e:
+                error_msg = handle_extraction_error(e, attempt + 1)
+                print(f"❌ {error_msg}")
+                
+            # Wait before retry
+            if attempt < MAX_RETRIES - 1:
+                print(f"⏳ Waiting {REQUEST_DELAY} seconds before retry...")
+                await asyncio.sleep(REQUEST_DELAY)
+    
+    print("💥 All extraction attempts failed")
+    return None
+'''
+
+# ============================================================================
+# FILE: src/utils.py
+# ============================================================================
+
+UTILS_CONTENT = '''import json
+import logging
+from typing import Dict, Any, Optional
+from datetime import datetime
+from pathlib import Path
+
+def setup_logging(log_level: str = "INFO", log_file: str = "scraper.log"):
+    """Configure logging for the scraper."""
+    logging.basicConfig(
+        level=getattr(logging, log_level.upper()),
+        format='%(asctime)s - %(levelname)s - %(message)s',
+        handlers=[
+            logging.FileHandler(log_file),
+            logging.StreamHandler()
+        ]
+    )
+
+def clean_extracted_data(data: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    Clean and normalize extracted data from WhoScored.
+    
+    Args:
+        data: Raw extracted data dictionary
+        
+    Returns:
+        Cleaned data dictionary
+    """
+    if not isinstance(data, dict):
+        return {}
+    
+    cleaned = {}
+    
+    for key, value in data.items():
+        # Skip error flags
+        if key == "error" and value is False:
+            continue
+            
+        # Clean string values
+        if isinstance(value, str):
+            value = value.strip()
+            if value.lower() in ['n/a', 'null', 'none', '']:
+                value = None
+        
+        # Clean numerical strings
+        elif isinstance(value, str) and value.replace('.', '').replace('-', '').isdigit():
+            try:
+                value = float(value) if '.' in value else int(value)
+            except ValueError:
+                pass
+        
+        # Recursively clean nested dictionaries
+        elif isinstance(value, dict):
+            value = clean_extracted_data(value)
+            
+        # Clean lists
+        elif isinstance(value, list):
+            value = [clean_extracted_data(item) if isinstance(item, dict) else item 
+                    for item in value if item is not None]
+        
+        if value is not None:
+            cleaned[key] = value
+    
+    return cleaned
+
+def save_data_to_json(data: Dict[str, Any], filename: str = "match_data.json") -> bool:
+    """
+    Save extracted data to JSON file.
+    
+    Args:
+        data: Data dictionary to save
+        filename: Output filename
+        
+    Returns:
+        True if saved successfully, False otherwise
+    """
+    try:
+        # Add metadata
+        data["extraction_metadata"] = {
+            "timestamp": datetime.now().isoformat(),
+            "scraper_version": "1.0.0",
+            "source": "WhoScored.com"
+        }
+        
+        # Ensure output directory exists
+        output_path = Path(filename)
+        output_path.parent.mkdir(parents=True, exist_ok=True)
+        
+        # Save with pretty formatting
+        with open(filename, 'w', encoding='utf-8') as f:
+            json.dump(data, f, indent=2, ensure_ascii=False)
+        
+        print(f"✅ Data saved successfully to: {filename}")
+        return True
+        
+    except Exception as e:
+        print(f"❌ Error saving data to {filename}: {e}")
+        return False
+
+def validate_match_url(url: str) -> bool:
+    """
+    Validate that the URL is a proper WhoScored match URL.
+    
+    Args:
+        url: URL to validate
+        
+    Returns:
+        True if valid WhoScored match URL
+    """
+    required_parts = [
+        "whoscored.com",
+        "/matches/", 
+        "/live/"
+    ]
+    
+    return all(part in url.lower() for part in required_parts)
+
+def handle_extraction_error(error: Exception, attempt: int) -> str:
+    """
+    Handle and format extraction errors.
+    
+    Args:
+        error: Exception that occurred
+        attempt: Current attempt number
+        
+    Returns:
+        Formatted error message
+    """
+    error_type = type(error).__name__
+    error_message = str(error)
+    
+    return f"Attempt {attempt} failed - {error_type}: {error_message}"
+
+def format_timeline_data(raw_data: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    Format raw extracted data into structured timeline format.
+    
+    Args:
+        raw_data: Raw data from extraction
+        
+    Returns:
+        Formatted timeline data
+    """
+    formatted = {
+        "match_info": {},
+        "timeline_data": [],
+        "summary_stats": {}
+    }
+    
+    # Extract basic match info
+    if "match_info" in raw_data:
+        formatted["match_info"] = raw_data["match_info"]
+    
+    # Format timeline data
+    if "timeline_ratings" in raw_data:
+        formatted["timeline_data"] = raw_data["timeline_ratings"]
+    elif "timeline" in raw_data:
+        formatted["timeline_data"] = raw_data["timeline"]
+    
+    # Add summary statistics
+    if "team_stats" in raw_data:
+        formatted["summary_stats"] = raw_data["team_stats"]
+    
+    return formatted
+
+def extract_key_metrics(data: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    Extract key performance metrics from match data.
+    
+    Args:
+        data: Complete match data
+        
+    Returns:
+        Dictionary of key metrics
+    """
+    metrics = {
+        "match_duration": 0,
+        "total_events": 0,
+        "rating_changes": 0,
+        "top_performer": None,
+        "average_rating": 0.0
+    }
+    
+    # Calculate metrics from timeline data
+    if "timeline_data" in data and data["timeline_data"]:
+        timeline = data["timeline_data"]
+        metrics["total_events"] = len(timeline)
+        
+        if timeline:
+            last_entry = max(timeline, key=lambda x: x.get("minute", 0))
+            metrics["match_duration"] = last_entry.get("minute", 0)
+            
+            # Calculate average rating
+            all_ratings = []
+            for entry in timeline:
+                if "home_team_avg_rating" in entry:
+                    all_ratings.append(entry["home_team_avg_rating"])
+                if "away_team_avg_rating" in entry:
+                    all_ratings.append(entry["away_team_avg_rating"])
+            
+            if all_ratings:
+                metrics["average_rating"] = round(sum(all_ratings) / len(all_ratings), 2)
+    
+    return metrics
+
+def create_summary_report(data: Dict[str, Any]) -> str:
+    """
+    Create a text summary report of the extracted data.
+    
+    Args:
+        data: Complete match data
+        
+    Returns:
+        Formatted summary report
+    """
+    report_lines = [
+        "=" * 50,
+        "WHOSCORED MATCH CENTRE DATA SUMMARY",
+        "=" * 50
+    ]
+    
+    # Match info
+    if "match_info" in data:
+        match_info = data["match_info"]
+        report_lines.extend([
+            f"Match: {match_info.get('home_team', 'N/A')} vs {match_info.get('away_team', 'N/A')}",
+            f"Score: {match_info.get('score', 'N/A')}",
+            f"Date: {match_info.get('date', 'N/A')}",
+            f"Competition: {match_info.get('competition', 'N/A')}",
+            ""
+        ])
+    
+    # Key metrics
+    metrics = extract_key_metrics(data)
+    report_lines.extend([
+        "KEY METRICS:",
+        f"- Match Duration: {metrics['match_duration']} minutes",
+        f"- Total Timeline Events: {metrics['total_events']}",
+        f"- Average Rating: {metrics['average_rating']}/10",
+        ""
+    ])
+    
+    # Timeline summary
+    if "timeline_data" in data and data["timeline_data"]:
+        report_lines.extend([
+            "TIMELINE SUMMARY:",
+            f"- Timeline entries: {len(data['timeline_data'])}",
+            f"- Data points collected throughout match",
+            ""
+        ])
+    
+    # Extraction info
+    if "extraction_metadata" in data:
+        metadata = data["extraction_metadata"]
+        report_lines.extend([
+            "EXTRACTION INFO:",
+            f"- Timestamp: {metadata.get('timestamp', 'N/A')}",
+            f"- Source: {metadata.get('source', 'N/A')}",
+            f"- Scraper Version: {metadata.get('scraper_version', 'N/A')}"
+        ])
+    
+    report_lines.append("=" * 50)
+    
+    return "\\n".join(report_lines)
+'''
+
+# ============================================================================
+# FILE: main.py
+# ============================================================================
+
+MAIN_CONTENT = '''import asyncio
+import sys
+from pathlib import Path
+from dotenv import load_dotenv
+
+# Load environment variables
+load_dotenv()
+
+from config import MATCH_URL, OUTPUT_FILE
+from src.scraper import scrape_whoscored_match
+from src.utils import (
+    save_data_to_json, 
+    validate_match_url, 
+    setup_logging,
+    format_timeline_data,
+    create_summary_report
+)
+from models.match_data import MatchData
+
+async def main():
+    """
+    Main entry point for WhoScored match centre scraper.
+    """
+    print("🏆 WhoScored Match Centre Timeline Scraper")
+    print("=" * 50)
+    
+    # Setup logging
+    setup_logging()
+    
+    # Validate match URL
+    if not validate_match_url(MATCH_URL):
+        print("❌ Invalid WhoScored match URL!")
+        print(f"URL: {MATCH_URL}")
+        print("Expected format: https://www.whoscored.com/matches/{id}/live/{match-slug}")
+        sys.exit(1)
+    
+    print(f"🎯 Target URL: {MATCH_URL}")
+    print(f"📊 Output file: {OUTPUT_FILE}")
+    print()
+    
+    try:
+        # Scrape the match data
+        print("🚀 Starting data extraction...")
+        extracted_data = await scrape_whoscored_match(MATCH_URL, MatchData)
+        
+        if extracted_data:
+            # Format the data
+            formatted_data = format_timeline_data(extracted_data)
+            
+            # Save to JSON file
+            if save_data_to_json(formatted_data, OUTPUT_FILE):
+                print(f"✅ Success! Data saved to {OUTPUT_FILE}")
+                
+                # Create and display summary
+                summary = create_summary_report(formatted_data)
+                print()
+                print(summary)
+                
+                # Save summary report
+                summary_file = OUTPUT_FILE.replace('.json', '_summary.txt')
+                with open(summary_file, 'w', encoding='utf-8') as f:
+                    f.write(summary)
+                print(f"📋 Summary report saved to {summary_file}")
+                
+            else:
+                print("❌ Failed to save extracted data")
+                sys.exit(1)
+        else:
+            print("💥 No data was extracted from the match page")
+            print()
+            print("Possible reasons:")
+            print("- Match page not accessible")
+            print("- Page structure changed")
+            print("- Network connectivity issues")
+            print("- Rate limiting or blocking")
+            sys.exit(1)
+            
+    except KeyboardInterrupt:
+        print("\\n⏹️ Scraping interrupted by user")
+        sys.exit(0)
+    except Exception as e:
+        print(f"💥 Unexpected error: {e}")
+        sys.exit(1)
+
+def run_scraper():
+    """
+    Convenience function to run the scraper.
+    """
+    try:
+        asyncio.run(main())
+    except KeyboardInterrupt:
+        print("\\n⏹️ Scraping stopped")
+    except Exception as e:
+        print(f"💥 Fatal error: {e}")
+        sys.exit(1)
+
+if __name__ == "__main__":
+    run_scraper()
+'''
+
+# ============================================================================
+# FILE: requirements.txt
+# ============================================================================
+
+REQUIREMENTS_CONTENT = '''# Core scraping dependencies
+Crawl4AI==0.4.247
+python-dotenv==1.0.1
+pydantic==2.10.6
+
+# Additional utilities
+requests==2.31.0
+beautifulsoup4==4.12.2
+lxml==4.9.3
+
+# For data processing
+pandas==2.1.4
+numpy==1.24.4
+
+# Async support
+aiohttp==3.9.1
+asyncio-throttle==1.0.2
+
+# Logging and monitoring
+rich==13.7.0
+'''
+
+# ============================================================================
+# FILE: .env.example
+# ============================================================================
+
+ENV_EXAMPLE_CONTENT = '''# OpenAI API Key for GPT-4o
+OPENAI_API_KEY="your-openai-api-key-here"
+
+# Optional: Alternative LLM providers
+ANTHROPIC_API_KEY=""
+GEMINI_API_KEY=""
+
+# Scraping configuration (optional overrides)
+MAX_RETRIES="3"
+REQUEST_DELAY="2"
+TIMEOUT_DURATION="60"
+
+# Logging
+LOG_LEVEL="INFO"
+DEBUG_MODE="false"
+'''
+
+print("WhoScored Match Centre Scraper - Complete Project Structure")
+print("=" * 60)
+print()
+print("Files created:")
+print("✅ README.md - Complete documentation")
+print("✅ config.py - Configuration and settings")  
+print("✅ models/match_data.py - Pydantic data models")
+print("✅ src/scraper.py - Core scraping logic")
+print("✅ src/utils.py - Utility functions")
+print("✅ main.py - Main entry point")
+print("✅ requirements.txt - Dependencies")
+print("✅ .env.example - Environment variables template")
